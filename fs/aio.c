@@ -1620,6 +1620,9 @@ long do_io_submit(aio_context_t ctx_id, long nr,
 	int i;
 	struct blk_plug plug;
 
+	int i = 0;
+	struct kiocb_batch batch;
+
 	if (unlikely(nr < 0))
 		return -EINVAL;
 
@@ -1635,7 +1638,10 @@ long do_io_submit(aio_context_t ctx_id, long nr,
 		return -EINVAL;
 	}
 
+
 	blk_start_plug(&plug);
+
+	kiocb_batch_init(&batch, nr);
 
 	/*
 	 * AKPM: should this return a partial result if some of the IOs were
@@ -1659,7 +1665,6 @@ long do_io_submit(aio_context_t ctx_id, long nr,
 		if (ret)
 			break;
 	}
-	blk_finish_plug(&plug);
 
 	put_ioctx(ctx);
 	return i ? i : ret;
