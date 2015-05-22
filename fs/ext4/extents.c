@@ -2233,38 +2233,6 @@ static int ext4_remove_blocks(handle_t *handle, struct inode *inode,
 
 	if (S_ISDIR(inode->i_mode) || S_ISLNK(inode->i_mode))
 		flags |= EXT4_FREE_BLOCKS_METADATA;
-
-	ext4_fsblk_t pblk;
-	int flags = 0;
-
-	if (S_ISDIR(inode->i_mode) || S_ISLNK(inode->i_mode))
-		flags |= EXT4_FREE_BLOCKS_METADATA | EXT4_FREE_BLOCKS_FORGET;
-	else if (ext4_should_journal_data(inode))
-		flags |= EXT4_FREE_BLOCKS_FORGET;
-
-	/*
-	 * For bigalloc file systems, we never free a partial cluster
-	 * at the beginning of the extent.  Instead, we make a note
-	 * that we tried freeing the cluster, and check to see if we
-	 * need to free it on a subsequent call to ext4_remove_blocks,
-	 * or at the end of the ext4_truncate() operation.
-	 */
-	flags |= EXT4_FREE_BLOCKS_NOFREE_FIRST_CLUSTER;
-
-	trace_ext4_remove_blocks(inode, ex, from, to, *partial_cluster);
-	/*
-	 * If we have a partial cluster, and it's different from the
-	 * cluster of the last block, we need to explicitly free the
-	 * partial cluster here.
-	 */
-	pblk = ext4_ext_pblock(ex) + ee_len - 1;
-	if (*partial_cluster && (EXT4_B2C(sbi, pblk) != *partial_cluster)) {
-		ext4_free_blocks(handle, inode, NULL,
-				 EXT4_C2B(sbi, *partial_cluster),
-				 sbi->s_cluster_ratio, flags);
-		*partial_cluster = 0;
-	}
-
 #ifdef EXTENTS_STATS
 	{
 		struct ext4_sb_info *sbi = EXT4_SB(inode->i_sb);
